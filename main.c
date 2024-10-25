@@ -23,17 +23,24 @@ char** read_crumbs(size_t* count) {
 	char buf[MAX_LINE_LENGTH];
 	*count=0;
 	while(fgets(buf,MAX_LINE_LENGTH,f)) {
+		if(!buf[0] || !buf[1]) continue;
 		paths[*count]=malloc(MAX_LINE_LENGTH);
 		memcpy(paths[*count],buf,MAX_LINE_LENGTH);
 		char* line=paths[*count];
 		for(size_t i=0; i<MAX_LINE_LENGTH; i++) {
-			if(line[i]=='\n' || line[i]=='\0') {
+			if(line[i]=='\n' || line[i]=='\0' || line[i]=='#') {
 				line[i]='\0';
+				if(i==0) {
+					free(line);
+					line=NULL;
+				}
 				i=MAX_LINE_LENGTH;
 			}
 		}
-		line[MAX_LINE_LENGTH-1]='\0';
-		*count+=1;
+		if(line) {
+			line[MAX_LINE_LENGTH-1]='\0';
+			*count+=1;
+		}
 	}
 	return paths;
 }
