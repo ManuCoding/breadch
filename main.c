@@ -60,7 +60,7 @@ int select_menu(char** options,size_t count) {
 	tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 
 	if(count<1) return -1;
-	printf("\x1b[0;3m %s\x1b[0m\n",options[0]);
+	printf("\x1b[0;7m %s\x1b[0m\n",options[0]);
 	for(size_t i=1; i<count; i++) {
 		printf(" %s\n",options[i]);
 	}
@@ -87,14 +87,14 @@ int select_menu(char** options,size_t count) {
 			case 'j':
 				movedown:
 				if(selection+1<(int)count) {
-					printf("\x1b[0m %s\n\x1b[3m %s\x1b[0m\r",options[selection],options[selection+1]);
+					printf("\x1b[0m %s\n\x1b[7m %s\x1b[0m\r",options[selection],options[selection+1]);
 					selection++;
 				}
 			break;
 			case 'k':
 				moveup:
 				if(selection>0) {
-					printf("\x1b[0m %s\r\x1b[1A\x1b[3m %s\x1b[0m\r",options[selection],options[selection-1]);
+					printf("\x1b[0m %s\r\x1b[1A\x1b[7m %s\x1b[0m\r",options[selection],options[selection-1]);
 					selection--;
 				}
 			break;
