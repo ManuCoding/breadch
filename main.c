@@ -15,7 +15,6 @@ char** read_crumbs(size_t* count) {
 		f=fopen(path,"r");
 	}
 	if(!f) {
-		printf("No set breadcrumb\n");
 		return NULL;
 	}
 
@@ -81,6 +80,8 @@ int select_menu(char** options,size_t count) {
 					case 'B':
 						goto movedown;
 					break;
+				} else if(ch==27) { // double escape to exit
+					goto no_choice;
 				}
 			break;
 			case 'j':
@@ -100,28 +101,30 @@ int select_menu(char** options,size_t count) {
 			case '\n':
 			case 'i':
 			case '\t':
-				return selection;
+				goto chose;
 			case 'q':
-				return -1;
-			default:
-				// printf("%d ",ch);
+				goto no_choice;
 		}
 	}
 	printf("\n");
 
+no_choice:
+	printf("\x1b[%dB",count-selection);
+	return -1;
+chose:
+	printf("\x1b[%dB",count-selection);
 	return selection;
 }
 
 int main() {
 	size_t count=0;
 	char** crumbs=read_crumbs(&count);
-	for(size_t i=0; i<count; i++) {
-		printf("%s\n",crumbs[i]);
-	}
 
-	if(count>0) {
+	if(count) {
 		size_t choice=select_menu(crumbs,count);
 		printf("chose: %d\n",choice);
+	} else {
+		printf("No set breadcrumb\n");
 	}
 
 	return 0;
