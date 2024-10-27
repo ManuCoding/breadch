@@ -64,7 +64,7 @@ int select_menu(char** options,size_t count) {
 	for(size_t i=1; i<count; i++) {
 		printf(" %s\n",options[i]);
 	}
-	printf("\x1b[%dA",count);
+	printf("\x1b[%zuA",count);
 
 	int ch=0;
 	int selection=0;
@@ -86,7 +86,7 @@ int select_menu(char** options,size_t count) {
 			break;
 			case 'j':
 				movedown:
-				if(selection+1<count) {
+				if(selection+1<(int)count) {
 					printf("\x1b[0m %s\n\x1b[3m %s\x1b[0m\r",options[selection],options[selection+1]);
 					selection++;
 				}
@@ -109,10 +109,10 @@ int select_menu(char** options,size_t count) {
 	printf("\n");
 
 no_choice:
-	printf("\x1b[%dB",count-selection);
+	printf("\x1b[%zuB",count-selection);
 	return -1;
 chose:
-	printf("\x1b[%dB",count-selection);
+	printf("\x1b[%zuB",count-selection);
 	return selection;
 }
 
@@ -122,7 +122,7 @@ int main() {
 
 	if(count) {
 		size_t choice=select_menu(crumbs,count);
-		printf("chose: %d\n",choice);
+		printf("chose: %zu\n",choice);
 	} else {
 		printf("No set breadcrumb\n");
 	}
