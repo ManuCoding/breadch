@@ -52,13 +52,7 @@ void revert_state() {
 	tcsetattr(0,TCSAFLUSH,&initial_state);
 }
 
-int main() {
-	size_t count=0;
-	char** crumbs=read_crumbs(&count);
-	for(size_t i=0; i<count; i++) {
-		printf("%s\n",crumbs[i]);
-	}
-	return 0;
+int select_menu(char** options,size_t count) {
 	tcgetattr(0,&initial_state);
 	atexit(revert_state);
 
@@ -66,12 +60,69 @@ int main() {
 	raw.c_lflag&=~(ICANON|ECHO); // Disable canonical mode and echo
 	tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 
+	if(count<1) return -1;
+	printf("\x1b[0;3m %s\x1b[0m\n",options[0]);
+	for(size_t i=1; i<count; i++) {
+		printf(" %s\n",options[i]);
+	}
+	printf("\x1b[%dA",count);
+
 	int ch=0;
+	int selection=0;
 	while(ch!='q') {
 		ch=getchar();
-		printf("%c",ch);
+		switch(ch) {
+			case 27: // escape
+				ch=getchar();
+				if(ch=='[') switch(getchar()) {
+					case 'A':
+						goto moveup;
+					break;
+					case 'B':
+						goto movedown;
+					break;
+				}
+			break;
+			case 'j':
+				movedown:
+				if(selection+1<count) {
+					printf("\x1b[0m %s\n\x1b[3m %s\x1b[0m\r",options[selection],options[selection+1]);
+					selection++;
+				}
+			break;
+			case 'k':
+				moveup:
+				if(selection>0) {
+					printf("\x1b[0m %s\r\x1b[1A\x1b[3m %s\x1b[0m\r",options[selection],options[selection-1]);
+					selection--;
+				}
+			break;
+			case '\n':
+			case 'i':
+			case '\t':
+				return selection;
+			case 'q':
+				return -1;
+			default:
+				// printf("%d ",ch);
+		}
 	}
 	printf("\n");
+
+	return selection;
+}
+
+int main() {
+	size_t count=0;
+	char** crumbs=read_crumbs(&count);
+	for(size_t i=0; i<count; i++) {
+		printf("%s\n",crumbs[i]);
+	}
+
+	if(count>0) {
+		size_t choice=select_menu(crumbs,count);
+		printf("chose: %d\n",choice);
+	}
 
 	return 0;
 }
