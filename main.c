@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 #include <termios.h>
-
-#define MAX_LINE_LENGTH 1024
 
 char** read_crumbs(size_t* count) {
 	char* home=getenv("HOME");
@@ -19,25 +18,25 @@ char** read_crumbs(size_t* count) {
 	}
 
 	char** paths=malloc(64*sizeof(size_t));
-	char buf[MAX_LINE_LENGTH];
+	char buf[PATH_MAX];
 	*count=0;
-	while(fgets(buf,MAX_LINE_LENGTH,f)) {
+	while(fgets(buf,PATH_MAX,f)) {
 		if(!buf[0] || !buf[1]) continue;
-		paths[*count]=malloc(MAX_LINE_LENGTH);
-		memcpy(paths[*count],buf,MAX_LINE_LENGTH);
+		paths[*count]=malloc(PATH_MAX);
+		memcpy(paths[*count],buf,PATH_MAX);
 		char* line=paths[*count];
-		for(size_t i=0; i<MAX_LINE_LENGTH; i++) {
+		for(size_t i=0; i<PATH_MAX; i++) {
 			if(line[i]=='\n' || line[i]=='\0' || line[i]=='#') {
 				line[i]='\0';
 				if(i==0) {
 					free(line);
 					line=NULL;
 				}
-				i=MAX_LINE_LENGTH;
+				i=PATH_MAX;
 			}
 		}
 		if(line) {
-			line[MAX_LINE_LENGTH-1]='\0';
+			line[PATH_MAX-1]='\0';
 			*count+=1;
 		}
 	}
@@ -84,6 +83,7 @@ int select_menu(char** options,size_t count) {
 					goto no_choice;
 				}
 			break;
+			case 'N'-'@': // C-n
 			case 'j':
 				movedown:
 				if(selection+1<(int)count) {
@@ -91,6 +91,7 @@ int select_menu(char** options,size_t count) {
 					selection++;
 				}
 			break;
+			case 'P'-'@': // C-p
 			case 'k':
 				moveup:
 				if(selection>0) {
@@ -121,8 +122,9 @@ int main() {
 	char** crumbs=read_crumbs(&count);
 
 	if(count) {
-		size_t choice=select_menu(crumbs,count);
-		fprintf(stderr,"chose: %zu\n",choice);
+		int choice=select_menu(crumbs,count);
+		if(choice>-1) printf("%s",crumbs[choice]);
+		if(choice<0) printf("%s",getcwd(crumbs[0],PATH_MAX));
 	} else {
 		fprintf(stderr,"No set breadcrumb\n");
 	}
