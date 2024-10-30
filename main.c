@@ -60,11 +60,11 @@ int select_menu(char** options,size_t count) {
 	tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 
 	if(count<1) return -1;
-	printf("\x1b[0;7m %s\x1b[0m\n",options[0]);
+	fprintf(stderr,"\x1b[0;7m %s\x1b[0m\n",options[0]);
 	for(size_t i=1; i<count; i++) {
-		printf(" %s\n",options[i]);
+		fprintf(stderr," %s\n",options[i]);
 	}
-	printf("\x1b[%zuA",count);
+	fprintf(stderr,"\x1b[%zuA",count);
 
 	int ch=0;
 	int selection=0;
@@ -87,14 +87,14 @@ int select_menu(char** options,size_t count) {
 			case 'j':
 				movedown:
 				if(selection+1<(int)count) {
-					printf("\x1b[0m %s\n\x1b[7m %s\x1b[0m\r",options[selection],options[selection+1]);
+					fprintf(stderr,"\x1b[0m %s\n\x1b[7m %s\x1b[0m\r",options[selection],options[selection+1]);
 					selection++;
 				}
 			break;
 			case 'k':
 				moveup:
 				if(selection>0) {
-					printf("\x1b[0m %s\r\x1b[1A\x1b[7m %s\x1b[0m\r",options[selection],options[selection-1]);
+					fprintf(stderr,"\x1b[0m %s\r\x1b[1A\x1b[7m %s\x1b[0m\r",options[selection],options[selection-1]);
 					selection--;
 				}
 			break;
@@ -106,13 +106,13 @@ int select_menu(char** options,size_t count) {
 				goto no_choice;
 		}
 	}
-	printf("\n");
+	fprintf(stderr,"\n");
 
 no_choice:
-	printf("\x1b[%zuB",count-selection);
+	fprintf(stderr,"\x1b[%zuB",count-selection);
 	return -1;
 chose:
-	printf("\x1b[%zuB",count-selection);
+	fprintf(stderr,"\x1b[%zuB",count-selection);
 	return selection;
 }
 
@@ -122,9 +122,9 @@ int main() {
 
 	if(count) {
 		size_t choice=select_menu(crumbs,count);
-		printf("chose: %zu\n",choice);
+		fprintf(stderr,"chose: %zu\n",choice);
 	} else {
-		printf("No set breadcrumb\n");
+		fprintf(stderr,"No set breadcrumb\n");
 	}
 
 	return 0;
