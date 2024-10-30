@@ -2,5 +2,5 @@
 
 set -xe
 
-gcc -ggdb -Wall -Wextra -o foltrek main.c
-./foltrek
+gcc -ggdb -Wall -Wextra -o breadch main.c
+./breadch
