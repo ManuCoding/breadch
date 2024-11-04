@@ -164,6 +164,18 @@ int main(int argc,char** argv) {
 			}
 			return 0;
 		}
+		if(strcmp(argv[1],"-s")==0) {
+			char* cwd=malloc(PATH_MAX);
+			getcwd(cwd,PATH_MAX);
+			cwd[PATH_MAX-1]='\0';
+			for(size_t i=0; i<count; i++) {
+				if(strcmp(crumbs[i],cwd)==0) {
+					printf("* ");
+					return 0;
+				}
+			}
+			return 0;
+		}
 		if(strcmp(argv[1],"-h")==0 || strcmp(argv[1],"--help")==0) {
 			printf("BREADCH - BREADcrumb CHooser\n");
 			printf("\n");
@@ -172,6 +184,7 @@ int main(int argc,char** argv) {
 			printf("Arguments:\n");
 			printf("   -l     list saved breadcrumbs\n");
 			printf("   -a     saves the current working directory to breadcrumbs\n");
+			printf("   -s     prints a '* ' to stdout if the current directory is a breadcrumb\n");
 			printf("   -h     display this help\n");
 			printf("\n");
 			return 0;
