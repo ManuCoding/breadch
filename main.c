@@ -1,23 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
 #include <termios.h>
 
+#define MAX_CRUMBS 64
+
+static char* empty_msg="No set breadcrumb\n";
+
 char** read_crumbs(size_t* count) {
+	static char* paths[64*sizeof(size_t)];
 	char* home=getenv("HOME");
 	FILE* f=NULL;
 	if(home) {
-		char path[1024];
+		char path[PATH_MAX];
 		snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
 		f=fopen(path,"r");
 	}
 	if(!f) {
-		return NULL;
+		return paths;
 	}
 
-	char** paths=malloc(64*sizeof(size_t));
 	char buf[PATH_MAX];
 	*count=0;
 	while(fgets(buf,PATH_MAX,f)) {
@@ -41,6 +46,24 @@ char** read_crumbs(size_t* count) {
 		}
 	}
 	return paths;
+}
+
+bool write_crumbs(char** crumbs,size_t count) {
+	char* home=getenv("HOME");
+	FILE* f=NULL;
+	if(home) {
+		char path[1024];
+		snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
+		f=fopen(path,"w");
+	}
+	if(!f) {
+		return false;
+	}
+	for(size_t i=0; i<count; i++) {
+		fprintf(f,"%s\n",crumbs[i]);
+	}
+	fclose(f);
+	return true;
 }
 
 typedef struct termios Termios;
@@ -117,16 +140,53 @@ chose:
 	return selection;
 }
 
-int main() {
+int main(int argc,char** argv) {
 	size_t count=0;
 	char** crumbs=read_crumbs(&count);
+	if(argc>1) {
+		if(strcmp(argv[1],"-a")==0) {
+			for(size_t i=MAX_CRUMBS-1; i>0; i--) {
+				crumbs[i]=crumbs[i-1];
+			}
+			if(!crumbs[0]) crumbs[0]=malloc(PATH_MAX);
+			getcwd(crumbs[0],PATH_MAX);
+			crumbs[0][PATH_MAX-1]='\0';
+			write_crumbs(crumbs,count+1);
+			return 0;
+		}
+		if(strcmp(argv[1],"-l")==0) {
+			if(count) {
+				for(size_t i=0; i<count; i++) {
+					printf("%s\n",crumbs[i]);
+				}
+			} else {
+				fprintf(stderr,empty_msg);
+			}
+			return 0;
+		}
+		if(strcmp(argv[1],"-h")==0 || strcmp(argv[1],"--help")==0) {
+			printf("BREADCH - BREADcrumb CHooser\n");
+			printf("\n");
+			printf("Usage: %s        choose from saved breadcrumbs\n",argv[0]);
+			printf("\n");
+			printf("Arguments:\n");
+			printf("   -l     list saved breadcrumbs\n");
+			printf("   -a     saves the current working directory to breadcrumbs\n");
+			printf("   -h     display this help\n");
+			printf("\n");
+			return 0;
+		}
+		fprintf(stderr,"Unknown option `%s`, see `%s -h` for usage.\n",argv[1],argv[0]);
+		return 1;
+	}
 
 	if(count) {
 		int choice=select_menu(crumbs,count);
 		if(choice>-1) printf("%s",crumbs[choice]);
 		if(choice<0) printf("%s",getcwd(crumbs[0],PATH_MAX));
 	} else {
-		fprintf(stderr,"No set breadcrumb\n");
+		fprintf(stderr,empty_msg);
+		return 1;
 	}
 
 	return 0;
