@@ -148,7 +148,7 @@ int main(int argc,char** argv) {
 			for(size_t i=MAX_CRUMBS-1; i>0; i--) {
 				crumbs[i]=crumbs[i-1];
 			}
-			if(!crumbs[0]) crumbs[0]=malloc(PATH_MAX);
+			crumbs[0]=malloc(PATH_MAX);
 			getcwd(crumbs[0],PATH_MAX);
 			crumbs[0][PATH_MAX-1]='\0';
 			write_crumbs(crumbs,count+1);
