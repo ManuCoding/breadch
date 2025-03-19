@@ -11,7 +11,7 @@
 static char* empty_msg="No set breadcrumb\n";
 
 char** read_crumbs(size_t* count) {
-	static char* paths[64*sizeof(size_t)];
+	static char* paths[64*sizeof(char*)];
 	char* home=getenv("HOME");
 	FILE* f=NULL;
 	if(home) {
