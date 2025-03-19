@@ -176,6 +176,17 @@ int main(int argc,char** argv) {
 			}
 			return 0;
 		}
+		if(strcmp(argv[1],"-c")==0) {
+			char* options[2*sizeof(char*)];
+			options[0]="no";
+			options[1]="yes";
+			fprintf(stderr,"Do you really want to delete crumbs?\n");
+			int choice=select_menu(options,2);
+			if(choice==1) {
+				write_crumbs(options,0);
+			}
+			return 0;
+		}
 		if(strcmp(argv[1],"-h")==0 || strcmp(argv[1],"--help")==0) {
 			printf("BREADCH - BREADcrumb CHooser\n");
 			printf("\n");
@@ -183,6 +194,7 @@ int main(int argc,char** argv) {
 			printf("\n");
 			printf("Arguments:\n");
 			printf("   -l     list saved breadcrumbs\n");
+			printf("   -c     clears all set breadcrumbs\n");
 			printf("   -a     saves the current working directory to breadcrumbs\n");
 			printf("   -s     prints a '* ' to stdout if the current directory is a breadcrumb\n");
 			printf("   -h     display this help\n");
