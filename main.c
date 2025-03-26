@@ -180,7 +180,7 @@ int main(int argc,char** argv) {
 			char* options[2*sizeof(char*)];
 			options[0]="no";
 			options[1]="yes";
-			fprintf(stderr,"Do you really want to delete crumbs?\n");
+			fprintf(stderr,"Do you really want to delete all breadcrumbs?\n");
 			int choice=select_menu(options,2);
 			if(choice==1) {
 				write_crumbs(options,0);
