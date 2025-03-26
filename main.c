@@ -83,7 +83,7 @@ void print_line(char* line,int max) {
 		if(mid<=0)
 			fprintf(stderr,"\r %.*s\r",max-1,line);
 		else
-			fprintf(stderr,"\r %.*s...%.*s\r",mid,line,len-mid,line+len-mid);
+			fprintf(stderr,"\r %.*s\x1b[31m...\x1b[97m%.*s\r",mid,line,len-mid,line+len-mid);
 	}
 }
 
