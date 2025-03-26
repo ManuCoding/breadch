@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <termios.h>
+#include <sys/ioctl.h>
 
 #define MAX_CRUMBS 64
 
@@ -73,6 +74,19 @@ void revert_state() {
 	tcsetattr(0,TCSAFLUSH,&initial_state);
 }
 
+void print_line(char* line,int max) {
+	int len=strlen(line);
+	if(len+1<max) {
+		fprintf(stderr,"\r %s\r",line);
+	} else {
+		int mid=max/2-2;
+		if(mid<=0)
+			fprintf(stderr,"\r %.*s\r",max-1,line);
+		else
+			fprintf(stderr,"\r %.*s...%.*s\r",mid,line,len-mid,line+len-mid);
+	}
+}
+
 int select_menu(char** options,size_t count) {
 	tcgetattr(0,&initial_state);
 	atexit(revert_state);
@@ -82,9 +96,17 @@ int select_menu(char** options,size_t count) {
 	tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
 
 	if(count<1) return -1;
-	fprintf(stderr,"\x1b[0;7m %s\x1b[0m\n",options[0]);
+
+	struct winsize w;
+	ioctl(1,TIOCGWINSZ,&w);
+
+	fprintf(stderr,"\x1b[0;7m");
+	print_line(options[0],w.ws_col);
+	fprintf(stderr,"\x1b[0m\n");
+
 	for(size_t i=1; i<count; i++) {
-		fprintf(stderr," %s\n",options[i]);
+		print_line(options[i],w.ws_col);
+		fprintf(stderr," \n");
 	}
 	fprintf(stderr,"\x1b[%zuA",count);
 
@@ -92,6 +114,7 @@ int select_menu(char** options,size_t count) {
 	int selection=0;
 	while(ch!='q') {
 		ch=getchar();
+		ioctl(1,TIOCGWINSZ,&w);
 		switch(ch) {
 			case 27: // escape
 				ch=getchar();
@@ -110,7 +133,11 @@ int select_menu(char** options,size_t count) {
 			case 'j':
 				movedown:
 				if(selection+1<(int)count) {
-					fprintf(stderr,"\x1b[0m %s\n\x1b[7m %s\x1b[0m\r",options[selection],options[selection+1]);
+					fprintf(stderr,"\x1b[0m");
+					print_line(options[selection],w.ws_col);
+					fprintf(stderr,"\n\x1b[7m");
+					print_line(options[selection+1],w.ws_col);
+					fprintf(stderr,"\x1b[0m");
 					selection++;
 				}
 			break;
@@ -118,7 +145,11 @@ int select_menu(char** options,size_t count) {
 			case 'k':
 				moveup:
 				if(selection>0) {
-					fprintf(stderr,"\x1b[0m %s\r\x1b[1A\x1b[7m %s\x1b[0m\r",options[selection],options[selection-1]);
+					fprintf(stderr,"\x1b[0m");
+					print_line(options[selection],w.ws_col);
+					fprintf(stderr,"\x1b[1A\x1b[7m");
+					print_line(options[selection-1],w.ws_col);
+					fprintf(stderr,"\x1b[0m");
 					selection--;
 				}
 			break;
