@@ -10,17 +10,24 @@
 
 static char* empty_msg="No set breadcrumb\n";
 
-char** read_crumbs(size_t* count) {
+char** read_crumbs(size_t* count,FILE* f) {
 	static char* paths[64*sizeof(char*)];
 	char* home=getenv("HOME");
-	FILE* f=NULL;
 	if(home) {
 		char path[PATH_MAX];
 		snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
 		f=fopen(path,"r");
 	}
 	if(!f) {
-		return paths;
+		char* home=getenv("HOME");
+		if(home) {
+			char path[PATH_MAX];
+			snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
+			f=fopen(path,"r");
+		}
+		if(!f) {
+			return paths;
+		}
 	}
 
 	char buf[PATH_MAX];
@@ -141,8 +148,11 @@ chose:
 }
 
 int main(int argc,char** argv) {
+	FILE* target=NULL;
+	if(!isatty(0)) target=stdin;
 	size_t count=0;
-	char** crumbs=read_crumbs(&count);
+	char** crumbs=read_crumbs(&count,target);
+	if(target) fclose(target);
 	if(argc>1) {
 		if(strcmp(argv[1],"-a")==0) {
 			for(size_t i=MAX_CRUMBS-1; i>0; i--) {
@@ -208,7 +218,8 @@ int main(int argc,char** argv) {
 		if(strcmp(argv[1],"-h")==0 || strcmp(argv[1],"--help")==0) {
 			printf("BREADCH - BREADcrumb CHooser\n");
 			printf("\n");
-			printf("Usage: %s        choose from saved breadcrumbs\n",argv[0]);
+			printf("Usage: %s         choose from saved breadcrumbs\n",argv[0]);
+			printf("       command|%s choose from STDIN\n",argv[0]);
 			printf("\n");
 			printf("Arguments:\n");
 			printf("   -l     list saved breadcrumbs\n");
