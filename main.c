@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 
 #define MAX_CRUMBS 64
 
@@ -98,7 +99,8 @@ int select_menu(char** options,size_t count) {
 	if(count<1) return -1;
 
 	struct winsize w;
-	ioctl(1,TIOCGWINSZ,&w);
+	int tty_fd=open("/dev/tty",O_RDONLY);
+	ioctl(tty_fd,TIOCGWINSZ,&w);
 
 	fprintf(stderr,"\x1b[0;7m");
 	print_line(options[0],w.ws_col);
@@ -114,7 +116,7 @@ int select_menu(char** options,size_t count) {
 	int selection=0;
 	while(ch!='q') {
 		ch=getchar();
-		ioctl(1,TIOCGWINSZ,&w);
+		ioctl(tty_fd,TIOCGWINSZ,&w);
 		switch(ch) {
 			case 27: // escape
 				ch=getchar();
