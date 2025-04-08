@@ -14,17 +14,20 @@ static char* empty_msg="No set breadcrumb\n";
 
 char** read_crumbs(size_t* count) {
 	static char* paths[64*sizeof(char*)];
-	char* home=getenv("HOME");
 	FILE* f=NULL;
-	if(home) {
-		char path[PATH_MAX];
-		snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
-		f=fopen(path,"r");
+	if(isatty(STDIN_FILENO)) {
+		char* home=getenv("HOME");
+		if(home) {
+			char path[PATH_MAX];
+			snprintf(path,sizeof(path),"%s/%s",home,".breadcrumbs");
+			f=fopen(path,"r");
+		}
+		if(!f) {
+			return paths;
+		}
+	} else {
+		f=stdin;
 	}
-	if(!f) {
-		return paths;
-	}
-
 	char buf[PATH_MAX];
 	*count=0;
 	while(fgets(buf,PATH_MAX,f)) {
@@ -70,9 +73,10 @@ bool write_crumbs(char** crumbs,size_t count) {
 
 typedef struct termios Termios;
 Termios initial_state={0};
+int keys_fd=0;
 
 void revert_state() {
-	tcsetattr(0,TCSAFLUSH,&initial_state);
+	tcsetattr(keys_fd,TCSAFLUSH,&initial_state);
 }
 
 void print_line(char* line,int max) {
@@ -89,18 +93,21 @@ void print_line(char* line,int max) {
 }
 
 int select_menu(char** options,size_t count) {
-	tcgetattr(0,&initial_state);
+	keys_fd=open("/dev/tty",O_RDONLY);
+
+	tcgetattr(keys_fd,&initial_state);
 	atexit(revert_state);
 
 	Termios raw=initial_state;
 	raw.c_lflag&=~(ICANON|ECHO); // Disable canonical mode and echo
-	tcsetattr(STDIN_FILENO,TCSAFLUSH,&raw);
+	raw.c_cc[VMIN]=1;  // Read at least 1 character
+	raw.c_cc[VTIME]=0; // No timeout
+	tcsetattr(keys_fd,TCSAFLUSH,&raw);
 
 	if(count<1) return -1;
 
 	struct winsize w;
-	int tty_fd=open("/dev/tty",O_RDONLY);
-	ioctl(tty_fd,TIOCGWINSZ,&w);
+	ioctl(keys_fd,TIOCGWINSZ,&w);
 
 	fprintf(stderr,"\x1b[0;7m");
 	print_line(options[0],w.ws_col);
@@ -112,11 +119,12 @@ int select_menu(char** options,size_t count) {
 	}
 	fprintf(stderr,"\x1b[%zuA",count);
 
-	int ch=0;
+	char ch=0;
 	int selection=0;
 	while(ch!='q') {
-		ch=getchar();
-		ioctl(tty_fd,TIOCGWINSZ,&w);
+		read(keys_fd,&ch,1);
+		if(!ch) break;
+		ioctl(keys_fd,TIOCGWINSZ,&w);
 		switch(ch) {
 			case 27: // escape
 				ch=getchar();
@@ -241,7 +249,10 @@ int main(int argc,char** argv) {
 		if(strcmp(argv[1],"-h")==0 || strcmp(argv[1],"--help")==0) {
 			printf("BREADCH - BREADcrumb CHooser\n");
 			printf("\n");
-			printf("Usage: %s        choose from saved breadcrumbs\n",argv[0]);
+			printf("Usage: %s         choose from saved breadcrumbs\n",argv[0]);
+			printf("       command|%s choose from command output\n",argv[0]);
+			printf("Note:\n");
+			printf("       empty lines and lines starting with `#` are ignored\n");
 			printf("\n");
 			printf("Arguments:\n");
 			printf("   -l     list saved breadcrumbs\n");
